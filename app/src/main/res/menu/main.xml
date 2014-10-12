@@ -5,4 +5,11 @@
         android:title="@string/action_settings"
         android:orderInCategory="100"
         android:showAsAction="never" />
+
+    <item android:id="@+id/action_service"
+          android:title="@string/action_service"
+          android:showAsAction="ifRoom"
+          android:orderInCategory="200"
+          android:icon="@drawable/ic_action_service_off" />
+
 </menu>

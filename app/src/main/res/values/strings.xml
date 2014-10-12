@@ -3,6 +3,7 @@
 
     <string name="app_name">Wizard-WiFi</string>
     <string name="action_settings">Settings</string>
+    <string name="action_service">Location</string>
 
     <string name="currently_saved_banner">Currently saved locations</string>
     <string name="save_current_location">Save current location</string>
