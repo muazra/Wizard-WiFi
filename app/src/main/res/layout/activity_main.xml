@@ -6,11 +6,46 @@
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
     android:paddingBottom="@dimen/activity_vertical_margin"
-    tools:context=".MainActivity">
+    android:background="#444444"
+    tools:context=".MainActivity"
+    android:id="@+id/">
 
     <TextView
-        android:text="@string/hello_world"
+        android:id="@+id/currently_saved_banner"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:textSize="16sp"
+        android:textColor="@android:color/white"
+        android:text="@string/currently_saved_banner"
+        />
+
+    <ListView
+        android:id="@android:id/list"
+        android:layout_below="@id/currently_saved_banner"
+        android:layout_width="match_parent"
+        android:layout_height="300dp">
+    </ListView>
+
+    <Button
+        android:id="@+id/save_current_location_button"
+        android:layout_below="@android:id/list"
+        android:layout_marginTop="20dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:textSize="18sp"
+        android:text="@string/save_current_location"/>
+
+    <Button
+        android:id="@+id/clear_all_locations_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="5dp"
+        android:layout_below="@id/save_current_location_button"
+        android:layout_centerHorizontal="true"
+        android:textSize="18sp"
+        android:text="@string/clear_saved_locations"/>
 
 </RelativeLayout>
