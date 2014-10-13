@@ -10,6 +10,6 @@
           android:title="@string/action_service"
           android:showAsAction="ifRoom"
           android:orderInCategory="200"
-          android:icon="@drawable/ic_action_service_off" />
+          android:visible="false"/>
 
 </menu>
