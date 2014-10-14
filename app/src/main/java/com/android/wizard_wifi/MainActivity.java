@@ -13,30 +13,27 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ProgressBar;
-import android.widget.TextView;
 import android.widget.Toast;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Set;
 
 
 public class MainActivity extends ListActivity {
-
     private static final String TAG = "MainActivity";
+    private Context mContext = this;
 
     private SharedPreferences mService;
     private SharedPreferences mLocations;
@@ -44,35 +41,32 @@ public class MainActivity extends ListActivity {
     private Boolean mServiceStatus;
 
     private Button mSaveButton;
+    private Button mClearButton;
     private ProgressBar mProgressBar;
-
-    private Context mContext = this;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        Log.d(TAG, "OnCreate");
-
         setContentView(R.layout.activity_main);
+
+        Log.d(TAG, "onCreate method");
 
         mProgressBar = (ProgressBar) findViewById(R.id.progress_bar_main);
         mSaveButton = (Button) findViewById(R.id.save_current_location_button);
+        mClearButton = (Button) findViewById(R.id.clear_all_locations_button);
 
         setupCache();
-
-        LocationsListAdapter adapter = new LocationsListAdapter(this, LocationListModel.instance().locationList);
-        setListAdapter(adapter);
-
         setupButtons();
+
+        LocationArrayAdapter adapter =
+                new LocationArrayAdapter(this, LocationListModel.instance().locationList);
+        setListAdapter(adapter);
 
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.main, menu);
-
-        Log.d(TAG, "OnCreateOptionsMenu");
 
         mService = getSharedPreferences("SERVICE", 0);
         mServiceStatus = mService.getBoolean("service", false);
@@ -89,9 +83,6 @@ public class MainActivity extends ListActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-
-        Log.d(TAG, "onOptionsItemSelected");
-
         if (item.getItemId() == R.id.action_service) {
             mServiceStatus = mService.getBoolean("service", false);
             mEditor = mService.edit();
@@ -106,86 +97,48 @@ public class MainActivity extends ListActivity {
                 mEditor.putBoolean("service", false);
                 Toast.makeText(this, "Service turned OFF", Toast.LENGTH_SHORT).show();
             }
-
             mEditor.apply();
         }
         return super.onOptionsItemSelected(item);
     }
 
-    private class LocationsListAdapter extends ArrayAdapter<LocationModel> {
-        private final List<LocationModel> mLocationModels;
-        private final Context mContext;
-
-        public LocationsListAdapter(Context context, List<LocationModel> models) {
-            super(context, R.layout.location_row, models);
-
-            Log.d(TAG, "LocationsListAdapter Constructor");
-
-            mLocationModels = models;
-            mContext = context;
-        }
-
-        @Override
-        public View getView(int position, View convertView, ViewGroup parent) {
-
-            Log.d(TAG, "LocationListAdapter GET_VIEW");
-
-            LayoutInflater inflater = (LayoutInflater) mContext
-                    .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-            View locationRow = inflater.inflate(R.layout.location_row, parent, false);
-
-            LocationModel locationModel = mLocationModels.get(position);
-            TextView nameTextView = (TextView) locationRow.findViewById(R.id.locationName);
-
-            Log.d(TAG, "GET_VIEW -> location name = " + locationModel.getName());
-
-            nameTextView.setText(locationModel.getName());
-
-            return locationRow;
-        }
-
-    }
-
     private void setupCache(){
-        Log.d(TAG, "setupCache");
-
         if(LocationListModel.instance().locationList.size() > 0)
             return;
 
         mLocations = getSharedPreferences("LOCATIONS", 0);
         int num_locations = mLocations.getInt("num_locations", 0);
 
-        Log.d(TAG, "setupCache -> num_locations = " + num_locations);
+        if(num_locations == 0)
+            return;
 
         List<LocationModel> locationListTemp = new ArrayList<LocationModel>();
-        LinkedHashSet<String> locationSet;
+        String jsonString = mLocations.getString("locations", null);
 
-        for(int i = 0; i < num_locations; i++){
-            String key = "location" + String.valueOf(i);
-            Log.d(TAG, "setupCache -> key = " + key);
-            locationSet = (LinkedHashSet<String>) mLocations.getStringSet(key, null);       //use JSONAray - then store as String //or check fav link
-            Iterator<String> iterator = locationSet.iterator();
-            LocationModel location = new LocationModel();
+        try{
+            JSONObject respJson = new JSONObject(jsonString);
+            JSONArray jsonArray = respJson.getJSONArray("locations");
+            JSONObject jsonObject;
 
-            Log.d(TAG, "setupCache -> locationSet = " +locationSet.toString());
+            for(int i = 0; i < jsonArray.length(); i++){
+                LocationModel location = new LocationModel();
+                jsonObject = jsonArray.getJSONObject(i);
 
-            while(iterator.hasNext()){
-                location.setName(iterator.next());
-                location.setZipcode(iterator.next());
-                location.setLatitude(iterator.next());
-                location.setLongitude(iterator.next());
+                location.setName(jsonObject.getString("name"));
+                location.setZipcode(jsonObject.getString("zipcode"));
+                location.setLatitude(jsonObject.getString("latitude"));
+                location.setLongitude(jsonObject.getString("longitude"));
+
+                locationListTemp.add(location);
             }
-
-            locationListTemp.add(location);
+        }catch(JSONException e){
+            e.printStackTrace();
         }
 
         LocationListModel.instance().locationList = locationListTemp;
-
     }
 
     private void setupButtons(){
-        Log.d(TAG, "setupButtons");
-
         mSaveButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -193,11 +146,36 @@ public class MainActivity extends ListActivity {
                 saveCurrentLocation();
             }
         });
+
+        mClearButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Log.d(TAG, "onClick clearButton");
+                mProgressBar.setVisibility(View.VISIBLE);
+
+                List<LocationModel> tempLocationList = new ArrayList<LocationModel>();
+                LocationListModel.instance().locationList = tempLocationList;
+
+                mLocations = getSharedPreferences("LOCATIONS", 0);
+                mEditor = mLocations.edit();
+                mEditor.putInt("num_locations", 0);
+                mEditor.commit();
+
+                Log.d(TAG, "locationsList size = " + LocationListModel.instance().locationList.size());
+                Log.d(TAG, "locationsList toString = " + LocationListModel.instance().locationList.toString());
+
+                mProgressBar.setVisibility(View.INVISIBLE);
+
+                Intent intent = new Intent(mContext, MainActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
+                startActivity(intent);
+            }
+        });
     }
 
     private void saveCurrentLocation(){
-        Log.d(TAG, "saveCurrentLocation");
-
         LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         LocationListener locationListener = new LocationListener() {
             @Override
@@ -209,7 +187,6 @@ public class MainActivity extends ListActivity {
                 locationObject.setZipcode(find(location).get(0).getPostalCode());
 
                 buildSaveLocationDialog(locationObject);
-
             }
             @Override
             public void onStatusChanged(String s, int i, Bundle bundle) {}
@@ -222,8 +199,6 @@ public class MainActivity extends ListActivity {
     }
 
     private void buildSaveLocationDialog(final LocationModel locationObject){
-        Log.d(TAG, "buildSaveLocationDialog");
-
         AlertDialog.Builder builder = new AlertDialog.Builder(this, AlertDialog.THEME_HOLO_DARK);
         builder.setTitle("Enter location name");
         final EditText name = new EditText(this);
@@ -231,16 +206,13 @@ public class MainActivity extends ListActivity {
         builder.setView(name);
         builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int id) {
-                Log.d(TAG, "buildSaveLocattionDialog -> in EditText = " + name.getText().toString());
-
-                locationObject.setName(name.getText().toString());
+                locationObject.setName(name.getText().toString().toUpperCase());
                 LocationListModel.instance().locationList.add(locationObject);
-
-
                 mProgressBar.setVisibility(View.INVISIBLE);
 
                 Intent intent = new Intent(mContext, MainActivity.class);
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
                 intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
                 startActivity(intent);
             }
@@ -269,38 +241,45 @@ public class MainActivity extends ListActivity {
     public void onStop(){
         super.onStop();
 
-        Log.d(TAG, "onStop");
+        Log.d(TAG, "onStop Method");
 
         mLocations = getSharedPreferences("LOCATIONS", 0);
         mEditor = mLocations.edit();
 
+        Log.d(TAG, "locationsList size = " + LocationListModel.instance().locationList.size());
+        Log.d(TAG, "locationsList toString = " + LocationListModel.instance().locationList.toString());
+
         List<LocationModel> tempLocationList = LocationListModel.instance().locationList;
         int num_locations = tempLocationList.size();
-
-        Log.d(TAG, "onStop -> num_locations = " + num_locations);
-
         mEditor.putInt("num_locations", num_locations);
 
-        Set<String> location = new LinkedHashSet<String>();
-        String key;
+        Log.d(TAG, "tempLocationList size = " + num_locations);
+        Log.d(TAG, "tempLocationsList toString() = " + tempLocationList.toString());
 
+        JSONArray jArray = new JSONArray();
         for(int i = 0; i < num_locations; i++){
-            key = "location" + String.valueOf(i);
-
-            Log.d(TAG, "onStop -> key = " + key);
-
-            location.clear();
-
-            location.add(tempLocationList.get(i).getName());
-            location.add(tempLocationList.get(i).getZipcode());
-            location.add(tempLocationList.get(i).getLatitude());
-            location.add(tempLocationList.get(i).getLongitude());
-
-            Log.d(TAG, "onStop - Location toString() = " + location.toString());
-
-            mEditor.putStringSet(key, location);
+            JSONObject jObject = new JSONObject();
+            try {
+                jObject.put("name", tempLocationList.get(i).getName());
+                jObject.put("zipcode", tempLocationList.get(i).getZipcode());
+                jObject.put("latitude", tempLocationList.get(i).getLatitude());
+                jObject.put("longitude", tempLocationList.get(i).getLongitude());
+                jArray.put(jObject);
+            }catch(JSONException e){
+                e.printStackTrace();
+            }
         }
 
+        JSONObject mainJObject = new JSONObject();
+        try{
+            mainJObject.put("locations", jArray);
+        }catch(JSONException e){
+            e.printStackTrace();
+        }
+
+        Log.d(TAG, "mainObject.toString() = " + mainJObject.toString());
+
+        mEditor.putString("locations", mainJObject.toString());
         mEditor.apply();
 
     }

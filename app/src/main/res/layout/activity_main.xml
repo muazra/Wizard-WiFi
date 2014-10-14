@@ -11,11 +11,13 @@
 
     <TextView
         android:id="@+id/currently_saved_banner"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="match_parent"
+        android:layout_height="30dp"
         android:layout_alignParentTop="true"
         android:layout_centerHorizontal="true"
         android:textSize="16sp"
+        android:background="#222222"
+        android:gravity="center"
         android:textColor="@android:color/white"
         android:text="@string/currently_saved_banner"
         />
@@ -24,13 +26,16 @@
         android:id="@android:id/list"
         android:layout_below="@id/currently_saved_banner"
         android:layout_width="match_parent"
-        android:layout_height="300dp">
+        android:layout_height="300dp"
+        android:divider="#222222"
+        android:layout_centerHorizontal="true"
+        android:dividerHeight="2dp">
     </ListView>
 
     <Button
         android:id="@+id/save_current_location_button"
         android:layout_below="@android:id/list"
-        android:layout_marginTop="20dp"
+        android:layout_marginTop="15dp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerHorizontal="true"
