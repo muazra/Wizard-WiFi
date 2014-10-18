@@ -57,8 +57,7 @@ public class MainActivity extends ListActivity {
                 new LocationArrayAdapter(this, LocationListModel.instance().locationList);
         setListAdapter(adapter);
 
-        Intent i = new Intent(mContext, PollService.class);
-        mContext.startService(i);
+        PollService.setServiceAlarm(mContext, true);
 
     }
 

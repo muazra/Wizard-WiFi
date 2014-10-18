@@ -1,6 +1,8 @@
 package com.android.wizard_wifi;
 
+import android.app.AlarmManager;
 import android.app.IntentService;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -72,7 +74,7 @@ public class PollService extends IntentService{
                 }
                 else{
                     //turn off Wi-Fi
-                    if(!wifi.isWifiEnabled())
+                    if(wifi.isWifiEnabled())
                         wifi.setWifiEnabled(false);
                 }
             }
@@ -84,6 +86,30 @@ public class PollService extends IntentService{
             public void onProviderDisabled(String s) {}
         };
         mlocationManager.requestSingleUpdate(LocationManager.NETWORK_PROVIDER, locationListener, null);
+    }
+
+    public static void setServiceAlarm(Context context, boolean isOn) {
+        Intent i = new Intent(context, PollService.class);
+        PendingIntent pi = PendingIntent.getService(
+                context, 0, i, 0);
+
+        AlarmManager alarmManager = (AlarmManager)
+                context.getSystemService(Context.ALARM_SERVICE);
+
+        if (isOn) {
+            alarmManager.setRepeating(AlarmManager.RTC,
+                    System.currentTimeMillis(), POLL_INTERVAL, pi);
+        } else {
+            alarmManager.cancel(pi);
+            pi.cancel();
+        }
+    }
+
+    public static boolean isServiceAlarmOn(Context context) {
+        Intent i = new Intent(context, PollService.class);
+        PendingIntent pi = PendingIntent.getService(
+                context, 0, i, PendingIntent.FLAG_NO_CREATE);
+        return pi != null;
     }
 
 }
