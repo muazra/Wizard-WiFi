@@ -41,7 +41,7 @@ public class MainActivity extends ListActivity {
     private Button mClearButton;
     private ProgressBar mProgressBar;
 
-    private boolean shouldStartAlarm;
+    private boolean alarmStatus;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,7 +66,7 @@ public class MainActivity extends ListActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.main, menu);
-        shouldStartAlarm = !PollService.isServiceAlarmOn(mContext);
+        alarmStatus = PollService.isServiceAlarmOn(mContext);
 
         mService = getSharedPreferences("SERVICE", 0);
         mServiceStatus = mService.getBoolean("service", false);
@@ -78,7 +78,8 @@ public class MainActivity extends ListActivity {
         }
         else {
             serviceItem.setIcon(R.drawable.ic_action_service_on);
-            PollService.setServiceAlarm(mContext, shouldStartAlarm);
+            if(!alarmStatus)
+                PollService.setServiceAlarm(mContext, true);
         }
         serviceItem.setVisible(true);
 
@@ -88,7 +89,7 @@ public class MainActivity extends ListActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == R.id.action_service) {
-            shouldStartAlarm = !PollService.isServiceAlarmOn(mContext);
+            alarmStatus = PollService.isServiceAlarmOn(mContext);
 
             mServiceStatus = mService.getBoolean("service", false);
             mEditor = mService.edit();
@@ -96,7 +97,8 @@ public class MainActivity extends ListActivity {
             if(!mServiceStatus) {
                 item.setIcon(R.drawable.ic_action_service_on);
                 mEditor.putBoolean("service", true);
-                PollService.setServiceAlarm(mContext, shouldStartAlarm);
+                if(!alarmStatus)
+                    PollService.setServiceAlarm(mContext, true);
                 Toast.makeText(this, "Service turned ON", Toast.LENGTH_SHORT).show();
             }
             else{
