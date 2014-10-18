@@ -9,9 +9,6 @@ import android.widget.TextView;
 
 import java.util.List;
 
-/**
- * Created by Muaz on 10/13/14.
- */
 public class LocationArrayAdapter extends ArrayAdapter<LocationModel> {
     private final List<LocationModel> mLocationModels;
     private final Context mContext;

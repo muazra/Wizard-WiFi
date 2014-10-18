@@ -30,7 +30,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-
 public class MainActivity extends ListActivity {
     private static final String TAG = "MainActivity";
     private Context mContext = this;
@@ -49,8 +48,6 @@ public class MainActivity extends ListActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        Log.d(TAG, "onCreate method");
-
         mProgressBar = (ProgressBar) findViewById(R.id.progress_bar_main);
         mSaveButton = (Button) findViewById(R.id.save_current_location_button);
         mClearButton = (Button) findViewById(R.id.clear_all_locations_button);
@@ -62,12 +59,14 @@ public class MainActivity extends ListActivity {
                 new LocationArrayAdapter(this, LocationListModel.instance().locationList);
         setListAdapter(adapter);
 
+        Intent i = new Intent(mContext, PollService.class);
+        mContext.startService(i);
+
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.main, menu);
-
         mService = getSharedPreferences("SERVICE", 0);
         mServiceStatus = mService.getBoolean("service", false);
 
@@ -108,7 +107,6 @@ public class MainActivity extends ListActivity {
 
         mLocations = getSharedPreferences("LOCATIONS", 0);
         int num_locations = mLocations.getInt("num_locations", 0);
-
         if(num_locations == 0)
             return;
 
@@ -150,19 +148,13 @@ public class MainActivity extends ListActivity {
         mClearButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Log.d(TAG, "onClick clearButton");
                 mProgressBar.setVisibility(View.VISIBLE);
 
-                List<LocationModel> tempLocationList = new ArrayList<LocationModel>();
-                LocationListModel.instance().locationList = tempLocationList;
-
+                LocationListModel.instance().locationList.clear();
                 mLocations = getSharedPreferences("LOCATIONS", 0);
                 mEditor = mLocations.edit();
                 mEditor.putInt("num_locations", 0);
-                mEditor.commit();
-
-                Log.d(TAG, "locationsList size = " + LocationListModel.instance().locationList.size());
-                Log.d(TAG, "locationsList toString = " + LocationListModel.instance().locationList.toString());
+                mEditor.apply();
 
                 mProgressBar.setVisibility(View.INVISIBLE);
 
@@ -241,20 +233,12 @@ public class MainActivity extends ListActivity {
     public void onStop(){
         super.onStop();
 
-        Log.d(TAG, "onStop Method");
-
         mLocations = getSharedPreferences("LOCATIONS", 0);
         mEditor = mLocations.edit();
-
-        Log.d(TAG, "locationsList size = " + LocationListModel.instance().locationList.size());
-        Log.d(TAG, "locationsList toString = " + LocationListModel.instance().locationList.toString());
 
         List<LocationModel> tempLocationList = LocationListModel.instance().locationList;
         int num_locations = tempLocationList.size();
         mEditor.putInt("num_locations", num_locations);
-
-        Log.d(TAG, "tempLocationList size = " + num_locations);
-        Log.d(TAG, "tempLocationsList toString() = " + tempLocationList.toString());
 
         JSONArray jArray = new JSONArray();
         for(int i = 0; i < num_locations; i++){
