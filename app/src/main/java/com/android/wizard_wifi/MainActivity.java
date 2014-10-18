@@ -6,8 +6,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.location.Address;
-import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -21,14 +19,14 @@ import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
+import com.android.wizard_wifi.util.findAddressUtil;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 public class MainActivity extends ListActivity {
     private static final String TAG = "MainActivity";
@@ -106,9 +104,7 @@ public class MainActivity extends ListActivity {
             return;
 
         mLocations = getSharedPreferences("LOCATIONS", 0);
-        int num_locations = mLocations.getInt("num_locations", 0);
-        if(num_locations == 0)
-            return;
+        if(mLocations.getInt("num_locations", 0) == 0) return;
 
         List<LocationModel> locationListTemp = new ArrayList<LocationModel>();
         String jsonString = mLocations.getString("locations", null);
@@ -176,7 +172,7 @@ public class MainActivity extends ListActivity {
 
                 locationObject.setLatitude(String.valueOf(location.getLatitude()));
                 locationObject.setLongitude(String.valueOf(location.getLongitude()));
-                locationObject.setZipcode(find(location).get(0).getPostalCode());
+                locationObject.setZipcode(findAddressUtil.find(location, mContext).get(0).getPostalCode());
 
                 buildSaveLocationDialog(locationObject);
             }
@@ -215,18 +211,6 @@ public class MainActivity extends ListActivity {
             }
         });
         builder.show();
-    }
-
-    public List<Address> find(Location location){
-        Geocoder geocode = new Geocoder(this, Locale.getDefault());
-        try {
-            List<Address> address = geocode.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
-            if (address.size() > 0) {
-                return address;
-            }
-        }catch(IOException e){}
-
-        return null;
     }
 
     @Override
